@@ -1,4 +1,15 @@
-"""RSFSUP - an interface to the Rohde&Schwarz FSUP Signal Source Analyzer"""
+"""RSFSUP - an interface to the Rohde&Schwarz FSUP Signal Source Analyzer
+
+Basic usage to plot the spectrum:
+>>> from rsfsup import CommChannel
+>>> with CommChannel("<ip address>") as fsup:
+...     spectrum = fsup.read()
+...
+>>> import matplotlib.pyplot as plt
+>>> plt.plot(*spectrum)
+[<matplotlib.lines.Line2D object at ...>]
+>>> plt.show()
+"""
 import pyvisa
 from unyt import define_unit, matplotlib_support
 from rsfsup.common import get_idn
