@@ -1,5 +1,6 @@
 """Frequency subsystem"""
 from rsfsup.common import Subsystem, scale_frequency, validate
+from rsfsup.markers import Marker
 
 
 class Frequency(Subsystem, kind="FREQ"):
@@ -15,6 +16,7 @@ class Frequency(Subsystem, kind="FREQ"):
             0 to f_max in hertz
             string such as '1 GHz'
             keyword such as 'UP' or 'DOWN'
+            Marker
         """
         value = float(self._visa.query(f"SENSE{self._screen()}:FREQUENCY:CENTER?"))
         return scale_frequency(value)
@@ -22,7 +24,14 @@ class Frequency(Subsystem, kind="FREQ"):
     @center.setter
     @validate
     def center(self, value):
-        self._visa.write(f"SENSE{self._screen()}:FREQUENCY:CENTER {value}")
+        if isinstance(value, Marker):
+            # Set the center frequency and step size to the marker frequency
+            # pylint: disable=protected-access
+            marker = value
+            self._visa.write(f"CALC{self._screen()}:MARK{marker._num}:FUNC:CENTER")
+            self._visa.write(f"CALC{self._screen()}:MARK{marker._num}:FUNC:CSTEP")
+        else:
+            self._visa.write(f"SENSE{self._screen()}:FREQUENCY:CENTER {value}")
 
     @property
     def span(self):
