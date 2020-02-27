@@ -110,6 +110,9 @@ def scale_frequency(value):
     while scaled >= 1.0 and exp < 9:
         exp += 3
         scaled = value / 10 ** exp
+    if exp > 0:
+        exp -= 3
+        scaled = value / 10 ** exp
     unit = FREQUENCY_UNITS[exp]
     return f"{scaled} {unit}"
 

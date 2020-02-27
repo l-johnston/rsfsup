@@ -26,5 +26,5 @@ class Bandwidth(Subsystem, kind="BW"):
     @property
     def video_bandwidth(self):
         """(str): 1 Hz to 10 MHz"""
-        value = self._visa.query(f"SENSE:{self._screen()}:BANDWIDTH:VIDEO?")
+        value = self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:VIDEO?")
         return scale_frequency(float(value))
