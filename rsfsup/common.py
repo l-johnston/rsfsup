@@ -107,7 +107,7 @@ def scale_frequency(value):
     """value (float): convert value to quantity"""
     exp = 0
     scaled = value
-    while scaled >= 1.0 and exp < 9:
+    while scaled >= 1.0 and exp < 12:
         exp += 3
         scaled = value / 10 ** exp
     if exp > 0:

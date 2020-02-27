@@ -2,7 +2,7 @@
 from datetime import datetime
 import numpy as np
 from unyt import unyt_quantity, unyt_array
-from rsfsup.common import RSBase, get_idn, validate
+from rsfsup.common import RSBase, get_idn, validate, BOOLEAN
 from rsfsup.display import Display
 from rsfsup.frequency import Frequency
 from rsfsup.amplitude import Amplitude
@@ -185,10 +185,20 @@ class Fsup(RSBase):
         x = np.linspace(start, stop, num=num, endpoint=True)
         x.name = "$f$"
         i = trace - 1
+        # change to single sweep, complete acquisition, read trace
+        continuous = self._visa.query(f"INIT{self._screen()}:CONT?")
+        original_continuous = BOOLEAN.get(continuous, continuous)
+        original_timeout = self._visa.timeout
+        sweep_time = float(self._visa.query(f"SENSE{self._screen()}:SWEEP:TIME?"))  # s
+        self._visa.timeout = original_timeout + 1000 * sweep_time
+        self._visa.write(f"INIT{self._screen()}:CONT OFF")
+        self._visa.write(f"INIT{self._screen()};*WAI")
+        self._visa.timeout = original_timeout
         data = self._traces[i].data
+        self._visa.write(f"INIT{self._screen()}:CONT {original_continuous}")
         unit = self._traces[i].y_unit
         y = unyt_array(data, unit)
-        y.name = "$A$"
+        y.name = "$P$"
         return (x, y)
 
     def __dir__(self):
