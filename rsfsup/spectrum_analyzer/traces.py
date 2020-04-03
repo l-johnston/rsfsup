@@ -1,6 +1,8 @@
 """Traces subsystem"""
 from rsfsup.common import Subsystem, validate
 
+_MODES = {"WRIT": "WRITE", "AVER": "AVERAGE", "MAXH": "MAXHOLD"}
+
 
 class Trace(Subsystem, kind="Trace"):
     """Trace subsystem
@@ -13,11 +15,13 @@ class Trace(Subsystem, kind="Trace"):
     def __init__(self, instr, num):
         super().__init__(instr)
         self._num = num
+        self._name = f"trace_{num}"
 
     @property
     def mode(self):
         """value (str): {WRITE, AVERAGE, MAXHOLD, MINHOLD}"""
-        return self._visa.query(f"DISP:WIND{self._screen()}:TRAC{self._num}:MODE?")
+        value = self._visa.query(f"DISP:WIND{self._screen()}:TRAC{self._num}:MODE?")
+        return _MODES[value]
 
     @mode.setter
     @validate
@@ -27,7 +31,10 @@ class Trace(Subsystem, kind="Trace"):
     @property
     def state(self):
         """value (str): {ON , OFF}"""
-        return self._visa.query(f"DISP:WIND{self._screen()}:TRAC{self._num}:STATE?")
+        value = int(
+            self._visa.query(f"DISP:WIND{self._screen()}:TRAC{self._num}:STATE?")
+        )
+        return "ON" if value else "OFF"
 
     @state.setter
     @validate

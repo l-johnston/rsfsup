@@ -1,15 +1,9 @@
 """Fsup class"""
 from datetime import datetime
-import numpy as np
-from unyt import unyt_quantity, unyt_array
-from rsfsup.common import RSBase, get_idn, validate, BOOLEAN
-from rsfsup.display import Display
-from rsfsup.frequency import Frequency
-from rsfsup.amplitude import Amplitude
-from rsfsup.bandwidth import Bandwidth
-from rsfsup.sweep import Sweep
-from rsfsup.markers import Marker, DeltaMarker
-from rsfsup.traces import Trace
+from rsfsup.common import RSBase, get_idn, validate
+from rsfsup.status import Status
+from rsfsup.spectrum_analyzer.instrument import SpecAn
+from rsfsup.ssa.instrument import SSA
 
 
 class Fsup(RSBase):
@@ -42,17 +36,15 @@ class Fsup(RSBase):
         super().__init__(visa)
         self._visa.write("*CLS")
         self._visa.write("SYSTEM:ERROR:CLEAR:ALL")
-        self._visa.write("ESE 255")
+        self._visa.write("*ESE 255")
         self._visa.write("FORMAT ASCII")
         self._idn = get_idn(visa)
-        self.display = Display(self)
-        self.frequency = Frequency(self)
-        self.amplitude = Amplitude(self)
-        self.bandwidth = Bandwidth(self)
-        self.sweep = Sweep(self)
-        self._markers = [Marker(self, num) for num in range(1, 5)]
-        self._deltamarkers = [DeltaMarker(self, num) for num in range(1, 5)]
-        self._traces = [Trace(self, 1)]
+        self._currentmode = self.mode
+        if self._currentmode == "SPECTRUM":
+            self.spectrum = SpecAn(self)
+        else:
+            self.ssa = SSA(self)
+        self.status = Status(self)
 
     @property
     def model(self):
@@ -71,7 +63,7 @@ class Fsup(RSBase):
 
     @property
     def mode(self):
-        """(str): {SPECTRUM, SSA}"""
+        """value (str): {SPECTRUM, SSA}"""
         result = self._visa.query("INSTRUMENT?")
         return Fsup._modes.get(result, result)
 
@@ -79,11 +71,21 @@ class Fsup(RSBase):
     @validate
     def mode(self, value):
         modes = dict((v, k) for k, v in Fsup._modes.items())
-        try:
-            value = modes[value]
-        except KeyError:
-            raise ValueError(f"{value} not a valid mode") from None
-        self._visa.write(f"INSTRUMENT:SELECT {value}")
+        if value in modes and value != self._currentmode:
+            original_timeout = self._visa.timeout
+            self._visa.timeout = 5000  # ms
+            if self._currentmode == "SPECTRUM":
+                del self.spectrum
+            else:
+                del self.ssa
+            self._currentmode = value
+            new_mode = modes[value]
+            self._visa.write(f"INSTRUMENT:SELECT {new_mode}")
+            if self._currentmode == "SPECTRUM":
+                self.spectrum = SpecAn(self)
+            else:
+                self.ssa = SSA(self)
+            self._visa.timeout = original_timeout
 
     def reset(self):
         """Reset the instrument to the factory default settings"""
@@ -120,95 +122,6 @@ class Fsup(RSBase):
     @validate
     def impedance(self, value):
         self._visa.write(f"INPUT:IMPEDANCE {value}")
-
-    def turnoff_markers(self):
-        """Turn off all markers in the active screen"""
-        for marker in self._markers + self._deltamarkers:
-            marker.state = "OFF"
-
-    def reference_fixed(self, state="ON"):
-        """state (str): {ON, OFF}
-            Turn on markers 1 and 2, if necessary, and set markers 2 to 4 as delta
-            markers fixed to marker 1
-        """
-        self.enable_marker(1)
-        self.enable_marker(2, as_delta=True)
-        self._visa.write(f"CALC{self._screen()}:DELT2:FUNC:FIX {state}")
-
-    def enable_marker(self, num, as_delta=False):
-        """num (int): marker/deltamarker number {1, 2, 3, 4}
-        as_delta (bool): True if deltamarker"""
-        i = num - 1
-        marker = self._markers[i]
-        deltamarker = self._deltamarkers[i]
-        # pylint: disable=protected-access
-        if as_delta:
-            deltamarker.state = "ON"
-            try:
-                setattr(self, deltamarker._name, deltamarker)
-            except AttributeError:
-                pass
-            marker.state = "OFF"
-            try:
-                delattr(self, marker._name)
-            except AttributeError:
-                pass
-        else:
-            deltamarker.state = "OFF"
-            try:
-                delattr(self, deltamarker._name)
-            except AttributeError:
-                pass
-            marker.state = "ON"
-            try:
-                setattr(self, marker._name, marker)
-            except AttributeError:
-                pass
-
-    def clear_traces(self):
-        """Clear all traces"""
-        self._visa.write(f"DISP:WIND{self._screen()}:TRACE:CLEAR")
-
-    def read(self, trace=1):
-        """Read trace data and return tuple (X, Y)
-
-        Parameters:
-            trace (int): {1, 2, 3}
-        """
-        num = self.sweep.points
-        start_str = self.frequency.start
-        value, unit = start_str.split(" ")
-        start = unyt_quantity(float(value), unit)
-        stop_str = self.frequency.stop
-        value, unit = stop_str.split(" ")
-        stop = unyt_quantity(float(value), unit)
-        x = np.linspace(start, stop, num=num, endpoint=True)
-        x.name = "$f$"
-        i = trace - 1
-        # change to single sweep, complete acquisition, read trace
-        continuous = self._visa.query(f"INIT{self._screen()}:CONT?")
-        original_continuous = BOOLEAN.get(continuous, continuous)
-        original_timeout = self._visa.timeout
-        sweep_time = float(self._visa.query(f"SENSE{self._screen()}:SWEEP:TIME?"))  # s
-        self._visa.timeout = original_timeout + 1000 * sweep_time
-        self._visa.write(f"INIT{self._screen()}:CONT OFF")
-        self._visa.write(f"INIT{self._screen()};*WAI")
-        self._visa.timeout = original_timeout
-        data = self._traces[i].data
-        self._visa.write(f"INIT{self._screen()}:CONT {original_continuous}")
-        unit = self._traces[i].y_unit
-        y = unyt_array(data, unit)
-        y.name = "$P$"
-        return (x, y)
-
-    def __dir__(self):
-        for marker in self._markers + self._deltamarkers:
-            if marker.state == "OFF":
-                try:
-                    delattr(self, marker._name)
-                except AttributeError:
-                    pass
-        return super().__dir__()
 
     def __repr__(self):
         return f"<R&S {self.model} at {self._visa.resource_name}>"

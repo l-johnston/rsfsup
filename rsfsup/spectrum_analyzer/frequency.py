@@ -1,6 +1,6 @@
 """Frequency subsystem"""
 from rsfsup.common import Subsystem, scale_frequency, validate
-from rsfsup.markers import Marker
+from rsfsup.spectrum_analyzer.markers import Marker
 
 
 class Frequency(Subsystem, kind="FREQ"):
