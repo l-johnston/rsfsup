@@ -96,6 +96,12 @@ class Fsup(RSBase):
         self._visa.write(f"SYSTEM:DATE {datetime.now().strftime('%Y,%m,%d')}")
         self._visa.write(f"SYSTEM:TIME {datetime.now().strftime('%H,%M,%S')}")
 
+    @property
+    def time(self):
+        """Return system time"""
+        get = lambda x: [int(s) for s in self._visa.query(f"SYSTEM:{x}?").split(",")]
+        return datetime(*(get("DATE") + get("TIME"))).isoformat()
+
     def lock_frontpanel(self):
         """Lock the front panel"""
         self._visa.write("SYSTEM:DISPLAY:FPANEL OFF")

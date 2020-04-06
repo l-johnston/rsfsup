@@ -31,7 +31,7 @@ of the instrument can be accessed using tab completion.
 >>> fsup.mode = "SSA"
 >>> data = fsup.ssa.read()
 >>> import matplotlib.pyplot as plt
->>> plt.plot(*data)
+>>> plt.semilogx(*data)
 >>> plt.show()
 >>> cc.close()
 ```

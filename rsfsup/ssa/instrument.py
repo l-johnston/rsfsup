@@ -3,6 +3,7 @@ import sys
 import itertools
 import asyncio
 from dataclasses import dataclass
+import pyvisa
 from unyt import unyt_array
 from rsfsup.common import Subsystem
 from rsfsup.ssa.display import Display
@@ -74,14 +75,20 @@ class SSA(Subsystem, kind="SSA"):
             # poll the ESB bit for an event occurance indicating completion or error
             while not self._visa.stb & 32:
                 await asyncio.sleep(1)
-            self._state.running = False
             esr = int(self._visa.query("*ESR?"))
             op_complete = bool(esr & 1)
+            self._visa.write(f"INIT:CONT {original_continuous}")
             return 0 if op_complete else 1
         except asyncio.CancelledError:
             pass
+        except pyvisa.VisaIOError as exc:
+            if exc.abbreviation == "VI_ERROR_TMO":
+                raise TimeoutError(
+                    "Acquisition timed out due to loss of communication"
+                ) from None
+            raise
         finally:
-            self._visa.write(f"INIT:CONT {original_continuous}")
+            self._state.running = False
 
     async def _start_task(self, premeasure, timeout):
         self._state.running = True
