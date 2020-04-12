@@ -4,6 +4,7 @@ import asyncio
 import itertools
 from dataclasses import dataclass
 import numpy as np
+import pyvisa
 from unyt import unyt_quantity, unyt_array
 from rsfsup.common import Subsystem
 from rsfsup.spectrum_analyzer.display import Display
@@ -94,10 +95,10 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
 
     async def _show_spinner(self):
         """Show an in-progress spinner during phase noise measurement"""
-        spinner = itertools.cycle(["-", "/", "|", "\\"])
+        glyph = itertools.cycle(["-", "\\", "|", "/"])
         try:
             while self._state.running:
-                sys.stdout.write(next(spinner))
+                sys.stdout.write(next(glyph))
                 sys.stdout.flush()
                 sys.stdout.write("\b")
                 await asyncio.sleep(0.5)
@@ -118,8 +119,6 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
             self._visa.write("*ESE 63")
             self._visa.write("STATUS:OPERATION:PTRANSITION 0")
             self._visa.write("STATUS:QUESTIONABLE:PTRANSITION 296")
-            original_continuous = self._visa.query("INIT:CONT?")
-            self._visa.write("INIT:CONT OFF")
             self._visa.write(f"INIT; *OPC")
             # poll the ESB bit for an event occurance indicating completion or error
             while not self._visa.stb & 32:
@@ -130,8 +129,12 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
             return 0 if op_complete else 1
         except asyncio.CancelledError:
             pass
-        finally:
-            self._visa.write(f"INIT:CONT {original_continuous}")
+        except pyvisa.VisaIOError as exc:
+            if exc.abbreviation == "VI_ERROR_TMO":
+                raise TimeoutError(
+                    "Acquisition timed out due to loss of communication"
+                ) from None
+            raise
 
     async def _start_task(self, timeout):
         self._state.running = True
@@ -143,19 +146,23 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
         else:
             return ret_value
 
-    def read(self, trace=1, timeout=None):
+    def read(self, trace=1, timeout=None, previous=True):
         """Read trace data and return tuple (X, Y)
 
         Parameters:
             trace (int): {1, 2, 3}
             timeout (int): timeout in seconds or None
+            previous (bool): read existing trace data if True, else start a new acquisition
         """
-        ret_value = asyncio.run(self._start_task(timeout))
-        if ret_value is None:
-            return None
-        if ret_value[1] > 0:
-            print(self._instr.status.event_status)
-            return None
+        original_continuous = self._visa.query("INIT:CONT?")
+        self._visa.write("INIT:CONT OFF")
+        if not previous:
+            ret_value = asyncio.run(self._start_task(timeout))
+            if ret_value is None:
+                return None
+            if ret_value[1] > 0:
+                print(self._instr.status.event_status)
+                return None
         num = self.sweep.points
         start_str = self.frequency.start
         value, unit = start_str.split(" ")
@@ -170,6 +177,7 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
         unit = self._traces[i].y_unit
         y = unyt_array(data, unit)
         y.name = "$P$"
+        self._visa.write(f"INIT:CONT {original_continuous}")
         return (x, y)
 
     def __dir__(self):

@@ -31,6 +31,7 @@ class Configure(Subsystem, kind="Phase Noise Configuration"):
 
     def __init__(self, instr):
         super().__init__(instr)
+        self._visa.write("CONFIGURE:PNOISE:MEASUREMENT CCORRELATION")
         self._visa.write("INPUT:GAIN:AUTO ON")
         self._visa.write("FREQUENCY:TRACK OFF")
         self._visa.write("FREQUENCY:VERIFY:STATE ON")

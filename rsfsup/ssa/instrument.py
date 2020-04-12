@@ -44,10 +44,10 @@ class SSA(Subsystem, kind="SSA"):
 
     async def _show_spinner(self):
         """Show an in-progress spinner during phase noise measurement"""
-        spinner = itertools.cycle(["-", "/", "|", "\\"])
+        glyph = itertools.cycle(["-", "\\", "|", "/"])
         try:
             while self._state.running:
-                sys.stdout.write(next(spinner))
+                sys.stdout.write(next(glyph))
                 sys.stdout.flush()
                 sys.stdout.write("\b")
                 await asyncio.sleep(0.5)
@@ -69,15 +69,12 @@ class SSA(Subsystem, kind="SSA"):
             self._visa.write("*ESE 63")
             self._visa.write("STATUS:OPERATION:PTRANSITION 16")
             self._visa.write("STATUS:QUESTIONABLE:PTRANSITION 24744")
-            original_continuous = self._visa.query("INIT:CONT?")
-            self._visa.write("INIT:CONT OFF")
             self._visa.write(f"INIT:{sweep}; *OPC")
             # poll the ESB bit for an event occurance indicating completion or error
             while not self._visa.stb & 32:
                 await asyncio.sleep(1)
             esr = int(self._visa.query("*ESR?"))
             op_complete = bool(esr & 1)
-            self._visa.write(f"INIT:CONT {original_continuous}")
             return 0 if op_complete else 1
         except asyncio.CancelledError:
             pass
@@ -102,22 +99,27 @@ class SSA(Subsystem, kind="SSA"):
         else:
             return ret_value
 
-    def read(self, premeasure=True, timeout=None):
+    def read(self, premeasure=True, timeout=None, previous=True):
         """Measure the phase noise and return (X, Y) tuple
 
         Parameters:
             premeasure (bool): perform premeasurement
             timeout (int): timeout in seconds or None
+            previous (bool): read existing trace data if True, else start a new acquisition
         """
-        ret_value = asyncio.run(self._start_task(premeasure, timeout))
-        if ret_value is None:
-            return None
-        if ret_value[1] > 0:
-            print(self._instr.status.event_status)
-            return None
+        original_continuous = self._visa.query("INIT:CONT?")
+        self._visa.write("INIT:CONT OFF")
+        if not previous:
+            ret_value = asyncio.run(self._start_task(premeasure, timeout))
+            if ret_value is None:
+                return None
+            if ret_value[1] > 0:
+                print(self._instr.status.event_status)
+                return None
         x_values, y_values = self._traces[0].data
         x = unyt_array(x_values, "Hz")
         x.name = "$f$"
         y = unyt_array(y_values, "dBc/Hz")
         y.name = "$N$"
+        self._visa.write(f"INIT:CONT {original_continuous}")
         return (x, y)
