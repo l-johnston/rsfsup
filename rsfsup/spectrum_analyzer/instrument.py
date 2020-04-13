@@ -14,6 +14,7 @@ from rsfsup.spectrum_analyzer.bandwidth import Bandwidth
 from rsfsup.spectrum_analyzer.sweep import Sweep
 from rsfsup.spectrum_analyzer.markers import Marker, DeltaMarker
 from rsfsup.spectrum_analyzer.traces import Trace
+from rsfsup.spectrum_analyzer.trigger import Trigger
 
 
 @dataclass
@@ -44,6 +45,7 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
         trace.state = "ON"
         setattr(self, trace._name, trace)
         self._state = State()
+        self.trigger = Trigger(instr)
 
     def reference_fixed(self, state="ON"):
         """state (str): {ON, OFF}

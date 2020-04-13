@@ -1,9 +1,12 @@
 """Fsup class"""
 from datetime import datetime
+import pathlib
+import time
 from rsfsup.common import RSBase, get_idn, validate
 from rsfsup.status import Status
 from rsfsup.spectrum_analyzer.instrument import SpecAn
 from rsfsup.ssa.instrument import SSA
+from rsfsup.mass_memory import MassMemory
 
 
 class Fsup(RSBase):
@@ -45,6 +48,7 @@ class Fsup(RSBase):
         else:
             self.ssa = SSA(self)
         self.status = Status(self)
+        self.file_system = MassMemory(self)
 
     @property
     def model(self):
@@ -131,3 +135,44 @@ class Fsup(RSBase):
 
     def __repr__(self):
         return f"<R&S {self.model} at {self._visa.resource_name}>"
+
+    def save_settings(self, file):
+        """Save the instrument settings to file
+
+        Instrument settings are stored in '.fsp' files located by default in
+        'D:\\USER\\CONFIG' and are in a proprietary, non-readable format.
+
+        Parameters:
+            file (str): file name, e.g. 'test01.fsp', 'd:\\test01.fsp'
+        """
+        self._visa.write("MMEMORY:SELECT:DEFAULT")
+        file = pathlib.PurePath(file)
+        if file.is_absolute():
+            self.file_system.drive = file.drive
+            self.file_system.directory = str(file.parent)
+        else:
+            self.file_system.drive = "D:"
+            self.file_system.directory = "D:\\USER\\CONFIG"
+        self._visa.write(f"MMEMORY:STORE:STATE 1, '{file.stem}'")
+
+    def load_settings(self, file):
+        """Load the instrument settings from file
+
+        Instrument settings are stored in '.fsp' files located by default in
+        'D:\\USER\\CONFIG' and are in a proprietary, non-readable format.
+
+        Parameters:
+            file (str): file name, e.g. 'test01.fsp', 'd:\\test01.fsp'
+        """
+        file = pathlib.PurePath(file)
+        try:
+            file = "".join(str(file).split(file.suffix))
+        except ValueError:
+            file = str(file)
+        self._visa.write("*CLS")
+        self._visa.write(f"MMEMORY:LOAD:STATE 1, '{file}'; *OPC")
+        while not self._visa.stb & 32:
+            time.sleep(1)
+        if self._visa.stb & 4:
+            err = self._visa.query("SYSTEM:ERROR?")
+            raise ValueError(err)

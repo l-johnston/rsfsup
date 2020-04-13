@@ -194,3 +194,8 @@ class Status(Subsystem, kind="Status"):
             sub_value = int(self._visa.query("STATUS:QUESTIONABLE:DCPNOISE?"))
             set_bits.append(decode_register(DCPN, sub_value))
         return (value, set_bits)
+
+    @property
+    def error_message(self):
+        """(str): error message"""
+        return self._visa.query("SYSTEM:ERROR?")
