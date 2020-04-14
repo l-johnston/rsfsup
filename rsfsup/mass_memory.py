@@ -1,5 +1,7 @@
 """Mass Memory subsystem"""
 import array
+import pathlib
+import time
 from rsfsup.common import Subsystem, validate
 
 
@@ -67,3 +69,43 @@ class MassMemory(Subsystem, kind="Mass Memory"):
             raw_array.fromlist(raw_bytes)
             f.write(raw_array)
         return None
+
+    def put(self, source, destination):
+        """Put the source file on the instrument at destination
+
+        Parameters:
+            source (str): file on control computer
+            destination (str): path and file name to save on the instrument
+        """
+        with open(source, "rb") as f:
+            file_bytes = f.read()
+        destination = pathlib.PurePath(destination)
+        if destination.is_absolute():
+            self.drive = destination.drive
+            self.directory = str(destination.parent)
+        else:
+            self.drive = "D:"
+        prefix = f"MMEMORY:DATA '{destination}',#{len(str(len(file_bytes)))}{len(file_bytes)}"
+        prefix = prefix.encode("utf-8")
+        suffix = "; *OPC".encode("utf-8")
+        self._visa.write("*CLS")
+        self._visa.write_raw(prefix + file_bytes + suffix)
+        while not self._visa.stb & 32:
+            time.sleep(1)
+        if self._visa.stb & 4:
+            err = self._visa.query("SYSTEM:ERROR?")
+            raise ValueError(err)
+
+    def delete(self, file):
+        """Delete file
+
+        Parameters:
+            file (str): file to delete
+        """
+        self._visa.write("*CLS")
+        self._visa.write(f"MMEMORY:DELETE '{file}'; *OPC")
+        while not self._visa.stb & 32:
+            time.sleep(1)
+        if self._visa.stb & 4:
+            err = self._visa.query("SYSTEM:ERROR?")
+            raise ValueError(err)

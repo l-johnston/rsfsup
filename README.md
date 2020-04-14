@@ -36,4 +36,12 @@ of the instrument can be accessed using tab completion.
 >>> cc.close()
 ```
 
+Supported features:
+- Spectrum analyzer
+    - Configuration
+    - Markers
+    - Trigger
+- Phase noise (PLL Cross correlation)
+- File system management
+
 ## Documentation
