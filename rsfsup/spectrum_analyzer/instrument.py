@@ -166,14 +166,25 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
                 print(self._instr.status.event_status)
                 return None
         num = self.sweep.points
-        start_str = self.frequency.start
-        value, unit = start_str.split(" ")
-        start = unyt_quantity(float(value), unit)
-        stop_str = self.frequency.stop
-        value, unit = stop_str.split(" ")
-        stop = unyt_quantity(float(value), unit)
+        if self.frequency.span == "0.0 Hz":
+            start_str = self.trigger.offset
+            value, unit = start_str.split(" ")
+            start = unyt_quantity(float(value), unit)
+            st_str = self.sweep.time
+            value, unit = st_str.split(" ")
+            st = unyt_quantity(float(value), unit)
+            stop = start + st
+            x_name = "$t$"
+        else:
+            start_str = self.frequency.start
+            value, unit = start_str.split(" ")
+            start = unyt_quantity(float(value), unit)
+            stop_str = self.frequency.stop
+            value, unit = stop_str.split(" ")
+            stop = unyt_quantity(float(value), unit)
+            x_name = "$f$"
         x = np.linspace(start, stop, num=num, endpoint=True)
-        x.name = "$f$"
+        x.name = x_name
         i = trace - 1
         data = self._traces[i].data
         unit = self._traces[i].y_unit

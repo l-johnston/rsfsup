@@ -41,6 +41,7 @@ Supported features:
     - Configuration
     - Markers
     - Trigger
+    - Read trace, frequency and time domain
 - Phase noise (PLL Cross correlation)
 - File system management
 
