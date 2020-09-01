@@ -18,8 +18,14 @@ from rsfsup.version import __version__
 
 __all__ = ["CommChannel"]
 
-define_unit("dBm", (1.0, "dB"))
-define_unit("dBc", (1.0, "dB"))
+try:
+    define_unit("dBm", (1.0, "dB"))
+except RuntimeError:
+    pass
+try:
+    define_unit("dBc", (1.0, "dB"))
+except RuntimeError:
+    pass
 matplotlib_support()
 matplotlib_support.label_style = "/"
 

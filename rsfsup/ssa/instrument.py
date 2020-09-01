@@ -118,8 +118,8 @@ class SSA(Subsystem, kind="SSA"):
                 return None
         x_values, y_values = self._traces[0].data
         x = unyt_array(x_values, "Hz")
-        x.name = "$f$"
+        x.name = r"$f_{\rm offset}$"
         y = unyt_array(y_values, "dBc/Hz")
-        y.name = "$N$"
+        y.name = r"$\mathcal{L}$"
         self._visa.write(f"INIT:CONT {original_continuous}")
         return (x, y)
