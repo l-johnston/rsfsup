@@ -23,7 +23,7 @@ class Display(Subsystem, kind="Display"):
         self._coupling = "NONE"
         self._visa.write(f"INSTRUMENT:COUPLE {self._coupling}")
         self._psave_holdoff = 0
-        self._visa.write(f"DISPLAY:PSAVE:STATE OFF")
+        self._visa.write("DISPLAY:PSAVE:STATE OFF")
 
     @property
     def format(self):
@@ -51,7 +51,7 @@ class Display(Subsystem, kind="Display"):
         try:
             value = windows[value]
         except KeyError:
-            raise ValueError(f"{value} not a valid screen")
+            raise ValueError(f"{value} not a valid screen") from None
         self._visa.write(f"DISPLAY:WINDOW{value}:SELECT")
 
     def set_title(self, text=""):
@@ -75,7 +75,7 @@ class Display(Subsystem, kind="Display"):
         try:
             value = couplings[value]
         except KeyError:
-            raise ValueError(f"{value} not a valid coupling")
+            raise ValueError(f"{value} not a valid coupling") from None
         self._visa.write(f"INSTRUMENT:COUPLE {value}")
 
     @property
