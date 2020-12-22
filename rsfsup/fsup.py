@@ -117,6 +117,16 @@ class Fsup(RSBase):
         self._visa.write("SYSTEM:DISPLAY:FPANEL ON")
 
     @property
+    def update_display(self):
+        """Whether to update the display during remote operation {ON, OFF}"""
+        return self._visa.query("SYSTEM:DISPLAY:UPDATE?")
+
+    @update_display.setter
+    @validate
+    def update_display(self, value):
+        self._visa.write(f"SYSTEM:DISPLAY:UPDATE {value}")
+
+    @property
     def options(self):
         """List the installed options"""
         codes = self._visa.query("*OPT?").split(",")
