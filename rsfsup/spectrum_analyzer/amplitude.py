@@ -36,3 +36,39 @@ class Amplitude(Subsystem, kind="AMPT"):
     @validate
     def ref_level(self, value):
         self._visa.write(f"DISP:WIND{self._screen()}:TRAC:Y:RLEV {value}")
+
+    @property
+    def attenuation(self):
+        """value (str): attenuation in dB or 'AUTO'"""
+        value = self._visa.query(f"INPUT{self._screen()}:ATTENUATION?")
+        return f"{value} dB"
+
+    @attenuation.setter
+    @validate
+    def attenuation(self, value):
+        if value == "AUTO":
+            timeout = self._visa.timeout
+            self._visa.timeout = 5000  # ms
+            self._visa.write(f"INPUT{self._screen()}:ATTENUATION:AUTO ON")
+            self._visa.timeout = timeout
+        else:
+            # self._visa.write(f"INPUT{self._screen()}:ATTENUATION:AUTO OFF")
+            self._visa.write(f"INPUT{self._screen()}:ATTENUATION {value}")
+
+    @property
+    def mixer_power(self):
+        """value (str): mixer power level in dBm or 'AUTO'"""
+        value = self._visa.query(f"INPUT{self._screen()}:MIXER:POWER?")
+        return f"{value} dBm"
+
+    @mixer_power.setter
+    @validate
+    def mixer_power(self, value):
+        if value == "AUTO":
+            timeout = self._visa.timeout
+            self._visa.timeout = 5000  # ms
+            self._visa.write(f"INPUT{self._screen()}:MIXER:AUTO ON")
+            self._visa.timeout = timeout
+        else:
+            # self._visa.write(f"INPUT{self._screen()}:MIXER:AUTO OFF")
+            self._visa.write(f"INPUT{self._screen()}:MIXER {value}")

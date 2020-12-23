@@ -49,8 +49,8 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
 
     def reference_fixed(self, state="ON"):
         """state (str): {ON, OFF}
-            Turn on markers 1 and 2, if necessary, and set markers 2 to 4 as delta
-            markers fixed to marker 1
+        Turn on markers 1 and 2, if necessary, and set markers 2 to 4 as delta
+        markers fixed to marker 1
         """
         self.enable_marker(1)
         self.enable_marker(2, as_delta=True)
@@ -121,7 +121,7 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
             self._visa.write("*ESE 63")
             self._visa.write("STATUS:OPERATION:PTRANSITION 0")
             self._visa.write("STATUS:QUESTIONABLE:PTRANSITION 296")
-            self._visa.write(f"INIT; *OPC")
+            self._visa.write("INIT; *OPC")
             # poll the ESB bit for an event occurance indicating completion or error
             while not self._visa.stb & 32:
                 await asyncio.sleep(1)
