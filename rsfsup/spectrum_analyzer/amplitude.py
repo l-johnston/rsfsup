@@ -52,7 +52,6 @@ class Amplitude(Subsystem, kind="AMPT"):
             self._visa.write(f"INPUT{self._screen()}:ATTENUATION:AUTO ON")
             self._visa.timeout = timeout
         else:
-            # self._visa.write(f"INPUT{self._screen()}:ATTENUATION:AUTO OFF")
             self._visa.write(f"INPUT{self._screen()}:ATTENUATION {value}")
 
     @property
@@ -70,5 +69,4 @@ class Amplitude(Subsystem, kind="AMPT"):
             self._visa.write(f"INPUT{self._screen()}:MIXER:AUTO ON")
             self._visa.timeout = timeout
         else:
-            # self._visa.write(f"INPUT{self._screen()}:MIXER:AUTO OFF")
             self._visa.write(f"INPUT{self._screen()}:MIXER {value}")

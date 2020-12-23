@@ -30,7 +30,7 @@ class Sweep(Subsystem, kind="SWEEP"):
     @continuous.setter
     @validate
     def continuous(self, value):
-        self._visa.write(f"INITIATE:{self._screen()}:CONTINUOUS {value}")
+        self._visa.write(f"INITIATE{self._screen()}:CONTINUOUS {value}")
 
     @property
     def points(self):
