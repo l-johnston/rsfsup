@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import pyvisa
 from unyt import unyt_quantity, unyt_array
-from rsfsup.common import Subsystem
+from rsfsup.common import Subsystem, validate
 from rsfsup.spectrum_analyzer.display import Display
 from rsfsup.spectrum_analyzer.frequency import Frequency
 from rsfsup.spectrum_analyzer.amplitude import Amplitude
@@ -192,6 +192,16 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
         y.name = "$P$"
         self._visa.write(f"INIT:CONT {original_continuous}")
         return (x, y)
+
+    @property
+    def ref_oscillator(self):
+        """value : str {INTERNAL, EXTERNAL}"""
+        return self._visa.query(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE?")
+
+    @ref_oscillator.setter
+    @validate
+    def ref_oscillator(self, value):
+        self._visa.write(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE {value}")
 
     def __dir__(self):
         for marker in self._markers + self._deltamarkers:
