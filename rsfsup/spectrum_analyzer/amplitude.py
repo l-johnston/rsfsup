@@ -9,13 +9,13 @@ class Amplitude(Subsystem, kind="AMPT"):
         instr (Fsup)
     """
 
-    def __init__(self, instr):
-        super().__init__(instr)
-        # For now, set the input attenuation to automatic to track the REF LEVEL.
-        # This will automatically adjust the attenuation to keep the maximum signal
-        # level (REF LEVEL) at the mixer to the default level of -25 dBm.
-        self._visa.write("INPUT:ATTENUATION:AUTO ON")
-        self._visa.write("INPUT:MIXER:AUTO ON")
+    # def __init__(self, instr):
+    #     super().__init__(instr)
+    #     # For now, set the input attenuation to automatic to track the REF LEVEL.
+    #     # This will automatically adjust the attenuation to keep the maximum signal
+    #     # level (REF LEVEL) at the mixer to the default level of -25 dBm.
+    #     self._visa.write("INPUT:ATTENUATION:AUTO ON")
+    #     self._visa.write("INPUT:MIXER:AUTO ON")
 
     @property
     def coupling(self):

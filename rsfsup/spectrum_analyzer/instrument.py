@@ -121,7 +121,7 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
             self._visa.write("*ESE 63")
             self._visa.write("STATUS:OPERATION:PTRANSITION 0")
             self._visa.write("STATUS:QUESTIONABLE:PTRANSITION 296")
-            self._visa.write("INIT; *OPC")
+            self._visa.write("INIT;*OPC")
             # poll the ESB bit for an event occurance indicating completion or error
             while not self._visa.stb & 32:
                 await asyncio.sleep(1)

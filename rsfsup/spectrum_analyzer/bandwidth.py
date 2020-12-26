@@ -9,13 +9,13 @@ class Bandwidth(Subsystem, kind="BW"):
         instr (Fsup)
     """
 
-    def __init__(self, instr):
-        super().__init__(instr)
-        # For now, adjust resolution and video bandwidths automatically according to
-        # the span.
-        self._visa.write("BANDWIDTH:RESOLUTION:AUTO ON")
-        self._visa.write("BANDWIDTH:RESOLUTION:TYPE NORMAL")
-        self._visa.write("BANDWIDTH:VIDEO:AUTO ON")
+    # def __init__(self, instr):
+    #     super().__init__(instr)
+    #     # For now, adjust resolution and video bandwidths automatically according to
+    #     # the span.
+    #     self._visa.write("BANDWIDTH:RESOLUTION:AUTO ON")
+    #     self._visa.write("BANDWIDTH:RESOLUTION:TYPE NORMAL")
+    #     self._visa.write("BANDWIDTH:VIDEO:AUTO ON")
 
     @property
     def resolution_bandwidth(self):
@@ -37,6 +37,16 @@ class Bandwidth(Subsystem, kind="BW"):
         else:
             self._visa.write(f"SENSE{self._screen()}:BAND:RES:AUTO OFF")
             self._visa.write(f"SENSE{self._screen()}:BAND:RES {value}")
+
+    @property
+    def filter_type(self):
+        """value : str {NORM, CFIL, FFT, RRC, P5, P5D}"""
+        return self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:RESOLUTION:TYPE?")
+
+    @filter_type.setter
+    @validate
+    def filter_type(self, value):
+        self._visa.write(f"SENSE{self._screen()}:BANDWIDTH:RESOLUTION:TYPE {value}")
 
     @property
     def video_bandwidth(self):

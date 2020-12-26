@@ -186,3 +186,9 @@ class Fsup(RSBase):
         if self._visa.stb & 4:
             err = self._visa.query("SYSTEM:ERROR?")
             raise ValueError(err)
+
+    def _write(self, cmd):
+        self._visa.write(cmd)
+
+    def _query(self, query):
+        return self._visa.query(query)
