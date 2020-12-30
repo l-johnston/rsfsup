@@ -1,3 +1,4 @@
+![PyPI](https://img.shields.io/pypi/v/rsfsup?style=plastic)
 # `rsfsup`
 Python interface to the Rohde & Schwarz FSUP Signal Source Analyzer
 
