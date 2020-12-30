@@ -104,7 +104,7 @@ class Fsup(RSBase):
     def time(self):
         """Return system time"""
         get = lambda x: [int(s) for s in self._visa.query(f"SYSTEM:{x}?").split(",")]
-        return datetime(*(get("DATE") + get("TIME"))).isoformat()
+        return datetime(*(get("DATE") + get("TIME")))
 
     def lock_frontpanel(self):
         """Lock the front panel"""
