@@ -195,13 +195,20 @@ class SpecAn(Subsystem, kind="Spectrum Analyzer"):
 
     @property
     def ref_oscillator(self):
-        """value : str {INTERNAL, EXTERNAL}"""
-        return self._visa.query(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE?")
+        """value : str {INTERNAL, EXTERNAL, EAUT}"""
+        source = self._visa.query(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE?")
+        if source == "EAUT":
+            source = self._visa.query(f"SENSE{self._screen()}:ROSC:SOURCE:EAUT?")
+        return source
 
     @ref_oscillator.setter
     @validate
     def ref_oscillator(self, value):
-        self._visa.write(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE {value}")
+        if value == "EAUT":
+            self._visa.write(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE EXT")
+            self._visa.write(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE EAUT")
+        else:
+            self._visa.write(f"SENSE{self._screen()}:ROSCILLATOR:SOURCE {value}")
 
     def __dir__(self):
         for marker in self._markers + self._deltamarkers:
