@@ -39,6 +39,17 @@ class Bandwidth(Subsystem, kind="BW"):
             self._visa.write(f"SENSE{self._screen()}:BAND:RES {value}")
 
     @property
+    def span_rbw_ratio(self):
+        """Span/RBW ratio {1, 10000}"""
+        res = self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:RESOLUTION:RATIO?")
+        return 1 / float(res)
+
+    @span_rbw_ratio.setter
+    @validate
+    def span_rbw_ratio(self, value):
+        self._visa.write(f"SENSE{self._screen()}:BAND:RES:RATIO {1/value}")
+
+    @property
     def filter_type(self):
         """value : str {NORM, CFIL, FFT, RRC, P5, P5D}"""
         return self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:RESOLUTION:TYPE?")
@@ -54,7 +65,7 @@ class Bandwidth(Subsystem, kind="BW"):
 
         Parameters
         ----------
-        value : str {AUTO, 1 Hz to 10 MHz
+        value : str {AUTO, 1 Hz to 10 MHz}
             When set to AUTO, video bandwidth is based on the VideoBandwidth/RBW ratio.
         """
         value = self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:VIDEO?")
@@ -68,3 +79,13 @@ class Bandwidth(Subsystem, kind="BW"):
         else:
             self._visa.write(f"SENSE{self._screen()}:BAND:VID:AUTO OFF")
             self._visa.write(f"SENSE{self._screen()}:BAND:VID {value}")
+
+    @property
+    def rbw_vbw_ratio(self):
+        """RBW/Video BW ratio {0.001, 100}"""
+        res = self._visa.query(f"SENSE{self._screen()}:BANDWIDTH:VIDEO:RATIO?")
+        return 1 / float(res)
+
+    @rbw_vbw_ratio.setter
+    def rbw_vbw_ratio(self, value):
+        self._visa.write(f"SENSE{self._screen()}:BAND:VID:RATIO {1/value}")
