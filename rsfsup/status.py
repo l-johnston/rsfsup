@@ -181,16 +181,16 @@ class Status(Subsystem, kind="Status"):
         """
         value = int(self._visa.query("STATUS:QUESTIONABLE?"))
         set_bits = decode_register(QUES, value)
-        if value & 2 ** 3:
+        if value & 2**3:
             sub_value = int(self._visa.query("STATUS:QUESTIONABLE:POWER?"))
             set_bits.append(decode_register(POW, sub_value))
-        if value & 2 ** 7:
+        if value & 2**7:
             sub_value = int(self._visa.query("STATUS:QUESTIONABLE:LPNOISE?"))
             set_bits.append(decode_register(LPN, sub_value))
-        if value & 2 ** 13:
+        if value & 2**13:
             sub_value = int(self._visa.query("STATUS:QUESTIONABLE:PNOISE?"))
             set_bits.append(decode_register(PNO, sub_value))
-        if value & 2 ** 14:
+        if value & 2**14:
             sub_value = int(self._visa.query("STATUS:QUESTIONABLE:DCPNOISE?"))
             set_bits.append(decode_register(DCPN, sub_value))
         return (value, set_bits)

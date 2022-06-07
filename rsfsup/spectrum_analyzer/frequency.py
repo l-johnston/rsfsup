@@ -13,10 +13,10 @@ class Frequency(Subsystem, kind="FREQ"):
     @property
     def center(self):
         """value (int or str):
-            0 to f_max in hertz
-            string such as '1 GHz'
-            keyword such as 'UP' or 'DOWN'
-            Marker
+        0 to f_max in hertz
+        string such as '1 GHz'
+        keyword such as 'UP' or 'DOWN'
+        Marker
         """
         value = float(self._visa.query(f"SENSE{self._screen()}:FREQUENCY:CENTER?"))
         return scale_frequency(value)
