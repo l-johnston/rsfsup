@@ -9,3 +9,4 @@ dist/
 doc/_build
 rsfsup.egg-info/
 venv/
+.python-version

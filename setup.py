@@ -37,5 +37,5 @@ setup(
         "Intended Audience :: Science/Research",
     ],
     url="https://github.com/l-johnston/rsfsup",
-    install_requires=["pyvisa", "unyt"],
+    install_requires=["pyvisa", "matplotlib", "unyt"],
 )
